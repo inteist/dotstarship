@@ -1,0 +1,44 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Insert a blank line between shell prompts
+add_newline = true
+
+# A minimal, single-line format that removes all the noisy language/package modules
+format = """
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$cmd_duration\
+$line_break\
+$character"""
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold yellow)"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = "bold cyan"
+# Show a lock icon if the directory is read-only
+read_only = " 󰌾"
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "bold cyan"
+format = "([$all_status$ahead_behind]($style) )"
+
+[cmd_duration]
+min_time = 2000 # Only show if command took more than 2 seconds
+format = "took [$duration]($style)"
+
+[hostname]
+ssh_only = true
+format = "[$hostname]($style) in "
+style = "bold yellow"
