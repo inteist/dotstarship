@@ -175,8 +175,8 @@ truncation_length = 40
 truncation_symbol = "..."
 only_attached = false
 always_show_remote = false
-style = "bold fg:#FFFFFF bg:#8A2BE2"
-format = "[](fg:#8A2BE2)[$symbol$branch]($style)[](fg:#8A2BE2) "
+style = "bold fg:#FFFFFF bg:#C902E8"
+format = "[](fg:#C902E8)[$symbol$branch]($style)[](fg:#C902E8) "
 
 [custom.git_worktree]
 command = '''n=$(basename "$(git rev-parse --git-dir 2>/dev/null)"); [ "$n" = ".git" ] || printf "[%s] " "$n"'''
@@ -219,7 +219,7 @@ style = "bold fg:#D7DBE8"
 
 [cmd_duration]
 min_time = 1
-style = "bold fg:grey"
+style = "bold fg:green"
 format = "[◷$duration]($style) "
 
 
