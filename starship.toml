@@ -18,20 +18,23 @@ $git_status\
 $git_metrics\
 $git_commit\
 
-$fill\
-$cmd_duration\
 
-$python\
-${custom.flutter}\
-$golang\
-$rust\
-$java\
-$php\
-$kotlin\
-$swift\
-${custom.git_user}\
-$line_break\
-$character"""
+"""
+
+# $fill\
+# $cmd_duration\
+
+# $python\
+# ${custom.flutter}\
+# $golang\
+# $rust\
+# $java\
+# $php\
+# $kotlin\
+# $swift\
+# ${custom.git_user}\
+# $line_break\
+# $character
 
 
 # $fill\
