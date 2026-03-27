@@ -10,7 +10,7 @@ command_timeout = 5000
 # line 2: git identity on the right
 # line 3: prompt character
 format = """
-$directory\
+${custom.path}\
 $git_branch\
 $git_status\
 $git_metrics\
@@ -159,14 +159,36 @@ success_symbol = "[❯](bold fg:#A6E3A1)"
 error_symbol = "[❯](bold fg:#F7768E)"
 vimcmd_symbol = "[❮](bold fg:#E0AF68)"
 
-[directory]
-truncation_length = 3
-truncate_to_repo = true
-truncation_symbol = ".../"
+[custom.path]
+when = "true"
 style = "bold fg:#89dceb bg:#313244"
-format = "[ 󰉋 $path ]($style)[](fg:#313244 bg:#45475a)"
-# Show a lock icon if the directory is read-only
-read_only = " 󰌾"
+command = '''
+p=${PWD/#$HOME/~}
+if [[ $p == "/" ]]; then
+  printf "/"
+  exit
+fi
+a=("${(@s:/:)p}")
+n=${#a}
+if (( n > 3 )); then
+  pre="••/"
+  start=$(( n - 2 ))
+else
+  pre=""
+  start=1
+fi
+out=""
+for (( i = start; i <= n; i++ )); do
+  s=${a[$i]}
+  if (( ${#s} > 14 )); then
+    s="${s:0:5}...${s: -5}"
+  fi
+  out+="${s}/"
+done
+[[ ! -w . ]] && ro=" 󰌾"
+printf "%s" "${pre}${out%/}${ro}"
+'''
+format = "[ 󰉋 $output ]($style)[](fg:#313244 bg:#45475a)"
 
 [git_branch]
 symbol = " "
