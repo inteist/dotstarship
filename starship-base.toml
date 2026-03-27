@@ -11,14 +11,9 @@ command_timeout = 5000
 # line 3: prompt character
 format = """
 ${custom.path}\
-${custom.path_to_git}\
 $git_branch\
-${custom.git_to_status}\
 $git_status\
 $git_metrics\
-${custom.tail_standard}\
-${custom.tail_branch}\
-$line_break\
 $character
 """
 
@@ -193,38 +188,14 @@ done
 [[ ! -w . ]] && ro=" 󰌾"
 printf "%s" "${pre}${out%/}${ro}"
 '''
-format = "[󰉋 $output ]($style)"
-
-[custom.path_to_git]
-command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
-style = "fg:#313244 bg:#45475a"
-format = "[$output]($style)"
-
-[custom.git_to_status]
-command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ([ -n \"$(git status --porcelain)\" ] || [ -n \"$(git diff --shortstat 2>/dev/null)\" ])"
-style = "fg:#45475a bg:#313244"
-format = "[$output]($style)"
-
-[custom.tail_standard]
-command = "echo ''"
-when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || [ -n \"$(git status --porcelain)\" ] || [ -n \"$(git diff --shortstat 2>/dev/null)\" ]"
-style = "fg:#313244"
-format = "[$output]($style)"
-
-[custom.tail_branch]
-command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -z \"$(git status --porcelain)\" ] && [ -z \"$(git diff --shortstat 2>/dev/null)\" ]"
-style = "fg:#45475a"
-format = "[$output]($style)"
+format = "[ 󰉋 $output ]($style)[](fg:#313244 bg:#45475a)"
 
 [git_branch]
 symbol = " "
 truncation_length = 24
 truncation_symbol = "..."
 style = "bold fg:#a6e3a1 bg:#45475a"
-format = "[ $symbol$branch ]($style)"
+format = "[ $symbol$branch ]($style)[](fg:#45475a bg:#313244)"
 
 [custom.git_worktree]
 command = '''n=$(basename "$(git rev-parse --git-dir 2>/dev/null)"); [ "$n" = ".git" ] || printf "[%s] " "$n"'''
@@ -234,7 +205,7 @@ style = "bold fg:#C0CAF5"
 
 [git_status]
 style = "bg:#313244"
-format = "[ 󰈚 $all_status$ahead_behind  ]($style)"
+format = "[ 󰈚 $all_status$ahead_behind ]($style)"
 conflicted = "[=](fg:#f38ba8 bg:#313244)"
 ahead = "[⇡](fg:#fab387 bg:#313244)"
 behind = "[⇣](fg:#fab387 bg:#313244)"
@@ -242,9 +213,9 @@ diverged = "[⇕](fg:#fab387 bg:#313244)"
 up_to_date = ""
 stashed = ""
 deleted = "[✘$count](fg:#f38ba8 bg:#313244)"
-modified = "[•$count](fg:#89b4fa bg:#313244)"
-untracked = "[•?$count](fg:#a6e3a1 bg:#313244)"
-staged = "[•+$count](fg:#a6e3a1 bg:#313244)"
+modified = "[!$count](fg:#89b4fa bg:#313244)"
+untracked = "[?$count](fg:#a6e3a1 bg:#313244)"
+staged = "[+$count](fg:#a6e3a1 bg:#313244)"
 renamed = "[ »$count](fg:#f9e2af bg:#313244)"
 
 [custom.git_context]
@@ -266,8 +237,7 @@ when = """
 disabled = false
 added_style = "bold fg:#a6e3a1 bg:#313244"
 deleted_style = "bold fg:#f38ba8 bg:#313244"
-only_nonzero_diffs = true
-format = "[+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted ]($deleted_style)"
+format = "[+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted]($deleted_style)[](fg:#313244) "
 
 [custom.git_user]
 command = "git config user.name"
