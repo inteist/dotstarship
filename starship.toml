@@ -205,7 +205,7 @@ style = "bold fg:#C0CAF5"
 
 [git_status]
 style = "bg:#313244"
-format = "[ 󰈚 $all_status$ahead_behind ]($style)"
+format = "([ 󰈚 $all_status$ahead_behind ]($style))"
 conflicted = "[=](fg:#f38ba8 bg:#313244)"
 ahead = "[⇡](fg:#fab387 bg:#313244)"
 behind = "[⇣](fg:#fab387 bg:#313244)"
@@ -237,7 +237,8 @@ when = """
 disabled = false
 added_style = "bold fg:#a6e3a1 bg:#313244"
 deleted_style = "bold fg:#f38ba8 bg:#313244"
-format = "[+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted]($deleted_style)[](fg:#313244) "
+only_nonzero_diffs = true
+format = "([+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted]($deleted_style)[](fg:#313244) )"
 
 [custom.git_user]
 command = "git config user.name"
