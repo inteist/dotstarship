@@ -14,6 +14,7 @@ ${custom.path}\
 $git_branch\
 $git_status\
 $git_metrics\
+$line_break\
 $character
 """
 
@@ -213,9 +214,9 @@ diverged = "[⇕](fg:#fab387 bg:#313244)"
 up_to_date = ""
 stashed = ""
 deleted = "[✘$count](fg:#f38ba8 bg:#313244)"
-modified = "[!$count](fg:#89b4fa bg:#313244)"
-untracked = "[?$count](fg:#a6e3a1 bg:#313244)"
-staged = "[+$count](fg:#a6e3a1 bg:#313244)"
+modified = "[•$count](fg:#89b4fa bg:#313244)"
+untracked = "[•?$count](fg:#a6e3a1 bg:#313244)"
+staged = "[•+$count](fg:#a6e3a1 bg:#313244)"
 renamed = "[ »$count](fg:#f9e2af bg:#313244)"
 
 [custom.git_context]
