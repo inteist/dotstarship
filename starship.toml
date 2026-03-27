@@ -193,7 +193,7 @@ done
 [[ ! -w . ]] && ro=" 󰌾"
 printf "%s" "${pre}${out%/}${ro}"
 '''
-format = "[ 󰉋 $output ]($style)"
+format = "[󰉋 $output ]($style)"
 
 [custom.path_to_git]
 command = "echo ''"
@@ -234,7 +234,7 @@ style = "bold fg:#C0CAF5"
 
 [git_status]
 style = "bg:#313244"
-format = "([ 󰈚 $all_status$ahead_behind ]($style))"
+format = "[ 󰈚 $all_status$ahead_behind  ]($style)"
 conflicted = "[=](fg:#f38ba8 bg:#313244)"
 ahead = "[⇡](fg:#fab387 bg:#313244)"
 behind = "[⇣](fg:#fab387 bg:#313244)"
@@ -267,7 +267,7 @@ disabled = false
 added_style = "bold fg:#a6e3a1 bg:#313244"
 deleted_style = "bold fg:#f38ba8 bg:#313244"
 only_nonzero_diffs = true
-format = "([+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted]($deleted_style) )"
+format = "[+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted ]($deleted_style)"
 
 [custom.git_user]
 command = "git config user.name"
