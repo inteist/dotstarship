@@ -46,7 +46,7 @@ $character
 [git_commit]
 commit_hash_length = 7
 format = '[$symbol  $hash]($style) '
-style = 'bold red'
+style = 'red'
 only_detached = true
 tag_disabled = false
 tag_max_candidates = 0
@@ -223,14 +223,14 @@ format = "[$output]($style)"
 symbol = " "
 truncation_length = 24
 truncation_symbol = "..."
-style = "bold fg:#a6e3a1 bg:#45475a"
+style = "fg:#a6e3a1 bg:#45475a"
 format = "[ $symbol$branch ]($style)"
 
 [custom.git_worktree]
 command = '''n=$(basename "$(git rev-parse --git-dir 2>/dev/null)"); [ "$n" = ".git" ] || printf "[%s] " "$n"'''
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
 format = "[$output]($style)"
-style = "bold fg:#C0CAF5"
+style = "fg:#C0CAF5"
 
 [git_status]
 style = "bg:#313244"
@@ -242,9 +242,9 @@ diverged = "[⇕](fg:#fab387 bg:#313244)"
 up_to_date = ""
 stashed = ""
 deleted = "[✘$count](fg:#f38ba8 bg:#313244)"
-modified = "[•$count](fg:#89b4fa bg:#313244)"
-untracked = "[•?$count](fg:#a6e3a1 bg:#313244)"
-staged = "[•+$count](fg:#a6e3a1 bg:#313244)"
+modified = "[ $count](fg:#89b4fa bg:#313244)"
+untracked = "[ ?$count](fg:#a6e3a1 bg:#313244)"
+staged = "[ +$count](fg:#a6e3a1 bg:#313244)"
 renamed = "[ »$count](fg:#f9e2af bg:#313244)"
 
 [custom.git_context]
@@ -254,7 +254,7 @@ command = """
   [ -n "$MAIN" ] && [ "$MAIN" != "$CURR" ] && basename "$MAIN"
 """
 format = "[$symbol$output]($style) "
-style = "bold blue dimmed"
+style = "blue dimmed"
 symbol = " "
 when = """
   MAIN=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/ {print $2; exit}')
@@ -264,16 +264,16 @@ when = """
 
 [git_metrics]
 disabled = false
-added_style = "bold fg:#a6e3a1 bg:#313244"
-deleted_style = "bold fg:#f38ba8 bg:#313244"
+added_style = "fg:#a6e3a1 bg:#313244"
+deleted_style = "fg:#f38ba8 bg:#313244"
 only_nonzero_diffs = true
-format = "[+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted ]($deleted_style)"
+format = "[+$added]($added_style)[ ](fg:#9399b2 bg:#313244)[-$deleted ]($deleted_style)"
 
 [custom.git_user]
 command = "git config user.name"
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
 format = "[ $output]($style)"
-style = "bold fg:#D7DBE8"
+style = "fg:#D7DBE8"
 
 [cmd_duration]
 min_time = 1
