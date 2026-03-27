@@ -13,6 +13,7 @@ format = """
 $directory\
 $git_branch\
 $git_status\
+$git_metrics\
 $character
 """
 
@@ -181,19 +182,19 @@ format = "[$output]($style)"
 style = "bold fg:#C0CAF5"
 
 [git_status]
-style = "bold fg:#a6e3a1 bg:#313244"
+style = "bg:#313244"
 format = "[](fg:#313244)[󰈚 $all_status$ahead_behind]($style)[](fg:#313244) "
-conflicted = "="
-ahead = "⇡"
-behind = "⇣"
-diverged = "⇕"
+conflicted = "[=](fg:#f38ba8)"
+ahead = "[⇡](fg:#fab387)"
+behind = "[⇣](fg:#fab387)"
+diverged = "[⇕](fg:#fab387)"
 up_to_date = ""
-untracked = "?"
-stashed = "$"
-modified = "!$count"
-staged = "+$count"
-renamed = "»"
-deleted = "✘"
+stashed = ""
+deleted = "[✘$count](fg:#f38ba8)"
+modified = "[ $count](fg:#89b4fa)"
+untracked = "[ ?$count](fg:#a6e3a1)"
+staged = "[ +$count](fg:#a6e3a1)"
+renamed = "[ »$count](fg:#f9e2af)"
 
 [custom.git_context]
 command = """
@@ -212,9 +213,9 @@ when = """
 
 [git_metrics]
 disabled = false
-added_style = "bold fg:#8BD5A0"
-deleted_style = "bold fg:#F7768E"
-format = "([+$added]($added_style) )([-$deleted]($deleted_style) )"
+added_style = "bold fg:#a6e3a1 bg:#313244"
+deleted_style = "bold fg:#f38ba8 bg:#313244"
+format = "[](fg:#313244)[+$added]($added_style)[•](fg:#9399b2 bg:#313244)[-$deleted]($deleted_style)[](fg:#313244) "
 
 [custom.git_user]
 command = "git config user.name"
