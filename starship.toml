@@ -163,7 +163,7 @@ vimcmd_symbol = "[❮](bold fg:#E0AF68)"
 when = "true"
 style = "bold fg:#89dceb bg:#313244"
 command = '''
-p=${PWD/#$HOME/~}
+p=${PWD/#$HOME/\~}
 if [[ $p == "/" ]]; then
   printf "/"
   exit
