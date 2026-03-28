@@ -185,8 +185,8 @@ fi
 out=""
 for (( i = start; i <= n; i++ )); do
   s=${a[$i]}
-  if (( ${#s} > 14 )); then
-    s="${s:0:5}...${s: -5}"
+  if (( ${#s} > 16)); then 
+    s="${s:0:6}..${s: -6}"
   fi
   out+="${s}/"
 done
