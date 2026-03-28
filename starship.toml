@@ -203,19 +203,19 @@ format = "[$output]($style)"
 
 [custom.git_to_status]
 command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ([ -n \"$(git status --porcelain)\" ] || [ -n \"$(git diff --shortstat 2>/dev/null)\" ])"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && (git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q .)"
 style = "fg:#45475a bg:#313244"
-format = "[$output]($style)"
+format = "([$output]($style))"
 
 [custom.tail_standard]
 command = "echo ''"
-when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || [ -n \"$(git status --porcelain)\" ] || [ -n \"$(git diff --shortstat 2>/dev/null)\" ]"
+when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q ."
 style = "fg:#313244"
 format = "[$output]($style)"
 
 [custom.tail_branch]
 command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -z \"$(git status --porcelain)\" ] && [ -z \"$(git diff --shortstat 2>/dev/null)\" ]"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ! git status --porcelain | grep -q . && ! git diff --shortstat 2>/dev/null | grep -q ."
 style = "fg:#45475a"
 format = "[$output]($style)"
 
@@ -234,7 +234,7 @@ style = "fg:#C0CAF5"
 
 [git_status]
 style = "bg:#313244"
-format = "[ 󰈚 $all_status$ahead_behind  ]($style)"
+format = "([ 󰈚 $all_status$ahead_behind  ]($style))"
 conflicted = "[=](fg:#f38ba8 bg:#313244)"
 ahead = "[⇡](fg:#fab387 bg:#313244)"
 behind = "[⇣](fg:#fab387 bg:#313244)"
@@ -267,7 +267,7 @@ disabled = false
 added_style = "fg:#a6e3a1 bg:#313244"
 deleted_style = "fg:#f38ba8 bg:#313244"
 only_nonzero_diffs = true
-format = "[+$added]($added_style)[ ](fg:#9399b2 bg:#313244)[-$deleted ]($deleted_style)"
+format = "([+$added]($added_style)[-$deleted ]($deleted_style))"
 
 [custom.git_user]
 command = "git config user.name"
