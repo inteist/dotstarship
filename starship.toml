@@ -294,7 +294,7 @@ when = '''
   curr=$(git rev-parse --show-toplevel 2>/dev/null)
   [ -n "$main" ] && [ -n "$curr" ] && [ "$main" != "$curr" ]
 '''
-format = "[ 󰘬 $output ]($style)"
+format = "[ 󰙅 $output ]($style)"
 style = "bold fg:#FFD580 bg:#45475a"
 
 [git_status]
