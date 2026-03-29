@@ -18,11 +18,11 @@
 #    └─ custom.path_to_git   ▶  fg:#313244 bg:#45475a   (git repos only)
 #  [󰙅 worktree  bg:#45475a]                             (linked worktrees only;
 #  [ branch    bg:#45475a]                              shares pill with branch)
-#    ├─ CLEAN repo:
+#    ├─ CLEAN (no file changes, not ahead/behind):
 #    │    └─ custom.tail_branch   ▶  fg:#45475a         (prompt end)
-#    └─ DIRTY repo:
+#    └─ DIRTY or AHEAD/BEHIND:
 #         └─ custom.git_to_status ▶  fg:#45475a bg:#313244
-#  [ 󰈚 status   bg:#313244]
+#  [ status   bg:#313244]  (󰈚 only when file changes; / for ahead/behind)
 #  [+N -N metrics  bg:#313244]
 #         └─ custom.tail_standard ▶  fg:#313244         (prompt end)
 #
@@ -36,6 +36,13 @@
 #   Each connector module encodes ONE specific colour transition and uses
 #   a `when` shell guard to appear only in the appropriate state.
 #   The `command` always echoes the U+E0B0 glyph; `style` supplies fg/bg.
+#
+# WHY `git status -sb | head -1 | grep -qE 'ahead|behind'`?
+#   `git status --porcelain` only reports file changes, not remote divergence.
+#   The branch header line (e.g. `## main...origin/main [ahead 2]`) is the
+#   only reliable single-command way to detect ahead/behind without an extra
+#   `git rev-list` call.  All three connector modules share this compound
+#   condition so their firing logic stays exactly in sync with git_status.
 # ═══════════════════════════════════════════════════════════════════════════
 
 add_newline = true
@@ -239,25 +246,26 @@ format = "[$output]($style)"
 # or uncommitted line diffs) so it doesn't render for clean repos.
 [custom.git_to_status]
 command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && (git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q .)"
+# Fires when there is ANYTHING to show in git_status: file changes OR ahead/behind.
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && { git status --porcelain | grep -q . || git status -sb 2>/dev/null | head -1 | grep -qE '(ahead|behind)'; }"
 style = "fg:#45475a bg:#313244"
 format = "([$output]($style))"
 
 # Closing chevron after the status/metrics pill (#313244 → terminal bg).
 # Fires whenever the last visible pill is the dark status block — i.e.,
-# outside git entirely, OR inside git but the repo is dirty.
+# outside git entirely, OR inside git with file changes OR ahead/behind divergence.
 [custom.tail_standard]
 command = "echo ''"
-when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q ."
+when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || git status --porcelain | grep -q . || git status -sb 2>/dev/null | head -1 | grep -qE '(ahead|behind)'"
 style = "fg:#313244"
 format = "[$output]($style)"
 
 # Closing chevron after the branch pill (#45475a → terminal bg).
-# Fires only when inside a clean git repo — the branch is the last pill and
-# needs an arrow in its own colour (#45475a) to look correct.
+# Fires only when inside a git repo that is BOTH clean on disk AND not
+# ahead/behind remote — i.e. the branch pill is truly the last visible pill.
 [custom.tail_branch]
-command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ! git status --porcelain | grep -q . && ! git diff --shortstat 2>/dev/null | grep -q ."
+command = "echo ''"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ! git status --porcelain | grep -q . && ! git status -sb 2>/dev/null | head -1 | grep -qE '(ahead|behind)'"
 style = "fg:#45475a"
 format = "[$output]($style)"
 
@@ -298,18 +306,25 @@ style = "fg:#e0ff02 bg:#45475a"
 
 [git_status]
 style = "bg:#313244"
-format = "([ 󰈚 $all_status$ahead_behind  ]($style))"
-conflicted = "[=](fg:#f38ba8 bg:#313244)"
-ahead = "[⇡](fg:#fab387 bg:#313244)"
-behind = "[⇣](fg:#fab387 bg:#313244)"
-diverged = "[⇕](fg:#fab387 bg:#313244)"
+# $all_status = file-change tokens only (no ahead/behind).
+# $ahead_behind = remote divergence only.  Keeping them separate lets us
+# display different glyphs: folder icon (󰈚) prefixes file changes;
+# \uf148 (↑ push) and \uf149 (↓ pull) replace the default ahead/behind arrows.
+# The outer () makes the whole block conditional — nothing renders when clean.
+format = "([$all_status$ahead_behind ]($style))"
+conflicted = "[= $count](fg:#f38ba8 bg:#313244)"
+# \uf148 = nf-oct-arrow_up  (push / ahead of remote)
+ahead = "[ $count](fg:#fab387 bg:#313244)"
+# \uf149 = nf-oct-arrow_down  (pull / behind remote)
+behind = "[ $count](fg:#fab387 bg:#313244)"
+diverged = "[ $ahead_count $behind_count](fg:#fab387 bg:#313244)"
 up_to_date = ""
 stashed = ""
-deleted = "[✘$count](fg:#f38ba8 bg:#313244)"
-modified = "[ $count](fg:#89b4fa bg:#313244)"
-untracked = "[ ?$count](fg:#a6e3a1 bg:#313244)"
-staged = "[ +$count](fg:#a6e3a1 bg:#313244)"
-renamed = "[ »$count](fg:#f9e2af bg:#313244)"
+deleted = "[󰈚 ✘$count](fg:#f38ba8 bg:#313244)"
+modified = "[󰈚  $count](fg:#89b4fa bg:#313244)"
+untracked = "[󰈚  ?$count](fg:#a6e3a1 bg:#313244)"
+staged = "[󰈚  +$count](fg:#a6e3a1 bg:#313244)"
+renamed = "[󰈚  »$count](fg:#f9e2af bg:#313244)"
 
 # custom.git_context removed — its logic is fully covered by
 # custom.git_worktree, which is the single authoritative worktree indicator.
