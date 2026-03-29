@@ -210,7 +210,7 @@ done
 [[ ! -w . ]] && ro=" 󰌾"
 printf "%s" "${pre}${out%/}${ro}"
 '''
-format = "[](fg:#313244)[ 󰉋 $output ]($style)[](fg:#313244)"
+format = "[](fg:#313244)[ 󰉋 $output ]($style)[](fg:#313244)"
 
 # Branch/worktree pill.  Ahead/behind lives here because it describes branch
 # divergence, not file changes in the working tree.
@@ -244,12 +244,12 @@ behind=$(printf "%s\n" "$header" | grep -oE 'behind [0-9]+' | awk '{print $2}')
 
 printf "%s" "$out"
 '''
-format = " [](fg:#45475a)[ $output ]($style)[](fg:#45475a)"
+format = "[](fg:#45475a)[ $output ]($style)[](fg:#45475a)"
 
 [git_status]
 style = "bg:#313244"
 # File-status pill only.  Remote divergence moved into custom.git_meta.
-format = "( [](fg:#313244)[ 󰈚$all_status ]($style)[](fg:#313244))"
+format = "( [](fg:#313244)[ 󰈚 $all_status ]($style)[](fg:#313244))"
 conflicted = "[ =$count](fg:#f38ba8 bg:#313244)"
 ahead = ""
 behind = ""
@@ -267,7 +267,7 @@ disabled = false
 added_style = "fg:#a6e3a1 bg:#313244"
 deleted_style = "fg:#f38ba8 bg:#313244"
 only_nonzero_diffs = true
-format = "( [](fg:#313244)[ +$added]($added_style)[ -$deleted ]($deleted_style)[](fg:#313244))"
+format = "( [](fg:#313244)[ +$added]($added_style)[ -$deleted ]($deleted_style)[](fg:#313244))"
 
 [custom.git_user]
 command = "git config user.name"
