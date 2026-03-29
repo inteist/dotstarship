@@ -256,8 +256,8 @@ header=$(git status -sb 2>/dev/null | head -1)
 ahead=$(printf "%s\n" "$header" | grep -oE 'ahead [0-9]+' | awk '{print $2}')
 behind=$(printf "%s\n" "$header" | grep -oE 'behind [0-9]+' | awk '{print $2}')
 
-[[ -n $ahead ]] && out+="  ${ahead}"
-[[ -n $behind ]] && out+="  ${behind}"
+[[ -n $ahead ]] && out+="  ${ahead}"
+[[ -n $behind ]] && out+="  ${behind}"
 
 printf "%s" "$out"
 '''
