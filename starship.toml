@@ -1,17 +1,51 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# Insert a blank line between shell prompts
+# ═══════════════════════════════════════════════════════════════════════════
+# PROMPT DESIGN — COLOR PALETTE
+# ═══════════════════════════════════════════════════════════════════════════
+#   #313244  dark blue-gray  →  path pill bg · git status/metrics bg
+#   #45475a  mid  blue-gray  →  git branch pill bg · worktree pill bg
+#   Terminal bg             →  implicit; gaps between pills
+#
+# POWERLINE CHEVRON CHAIN  (left → right, always one line)
+# ═══════════════════════════════════════════════════════════════════════════
+# Each "" (U+E0B0) chevron uses:
+#   fg = colour of the segment being LEFT
+#   bg = colour of the segment being ENTERED
+# This creates a seamless solid-arrow transition.
+#
+#  [󰉋 path  bg:#313244]
+#    └─ custom.path_to_git   ▶  fg:#313244 bg:#45475a   (git repos only)
+#  [󰙅 worktree  bg:#45475a]                             (linked worktrees only;
+#  [ branch    bg:#45475a]                              shares pill with branch)
+#    ├─ CLEAN repo:
+#    │    └─ custom.tail_branch   ▶  fg:#45475a         (prompt end)
+#    └─ DIRTY repo:
+#         └─ custom.git_to_status ▶  fg:#45475a bg:#313244
+#  [ 󰈚 status   bg:#313244]
+#  [+N -N metrics  bg:#313244]
+#         └─ custom.tail_standard ▶  fg:#313244         (prompt end)
+#
+#  Outside git entirely:
+#  [󰉋 path  bg:#313244]
+#         └─ custom.tail_standard ▶  fg:#313244         (prompt end)
+#
+# WHY SEPARATE CONNECTOR MODULES?
+#   Starship has no conditional at the format level — you cannot pick a
+#   different arrow colour based on what the previous module rendered.
+#   Each connector module encodes ONE specific colour transition and uses
+#   a `when` shell guard to appear only in the appropriate state.
+#   The `command` always echoes the U+E0B0 glyph; `style` supplies fg/bg.
+# ═══════════════════════════════════════════════════════════════════════════
+
 add_newline = true
-# Give git modules more time in large repos/worktrees.
+# Worktree git calls can be slower; 5 s prevents modules from being dropped.
 command_timeout = 5000
 
-# Prompt layout modeled after screenshot:
-# line 1: path + branch + git state (left), duration + node (right)
-# line 2: git identity on the right
-# line 3: prompt character
 format = """
 ${custom.path}\
 ${custom.path_to_git}\
+${custom.git_worktree}\
 $git_branch\
 ${custom.git_to_status}\
 $git_status\
@@ -19,8 +53,7 @@ $git_metrics\
 ${custom.tail_standard}\
 ${custom.tail_branch}\
 $line_break\
-$character
-"""
+$character"""
 
 # $fill\
 # $cmd_duration\
@@ -194,25 +227,35 @@ done
 printf "%s" "${pre}${out%/}${ro}"
 '''
 format = "[󰉋 $output ]($style)"
-
+# Chevron that transitions path pill (#313244) → git pill (#45475a).
+# Only appears inside a git repo.  The command echoes the U+E0B0 powerline
+# right-arrow glyph; the style paints it with the correct transition colours.
 [custom.path_to_git]
 command = "echo ''"
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
 style = "fg:#313244 bg:#45475a"
 format = "[$output]($style)"
-
+# Chevron that transitions git pill (#45475a) → status pill (#313244).
+# Only appears when the repo is dirty (has staged/unstaged/untracked changes
+# or uncommitted line diffs) so it doesn't render for clean repos.
 [custom.git_to_status]
 command = "echo ''"
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && (git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q .)"
 style = "fg:#45475a bg:#313244"
 format = "([$output]($style))"
 
+# Closing chevron after the status/metrics pill (#313244 → terminal bg).
+# Fires whenever the last visible pill is the dark status block — i.e.,
+# outside git entirely, OR inside git but the repo is dirty.
 [custom.tail_standard]
-command = "echo ''"
+command = "echo ''"
 when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q ."
 style = "fg:#313244"
 format = "[$output]($style)"
 
+# Closing chevron after the branch pill (#45475a → terminal bg).
+# Fires only when inside a clean git repo — the branch is the last pill and
+# needs an arrow in its own colour (#45475a) to look correct.
 [custom.tail_branch]
 command = "echo ''"
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ! git status --porcelain | grep -q . && ! git diff --shortstat 2>/dev/null | grep -q ."
@@ -226,11 +269,33 @@ truncation_symbol = "..."
 style = "fg:#a6e3a1 bg:#45475a"
 format = "[ $symbol$branch ]($style)"
 
+# ─── Linked-worktree indicator ───────────────────────────────────────────
+# Shown ONLY when inside a linked worktree — never in the main checkout.
+#
+# Detection: compares the main worktree path (first entry of `git worktree
+# list --porcelain`) with the current toplevel.  This is more reliable than
+# the old `basename $(git rev-parse --git-dir)` heuristic, which broke on
+# repos where the git-dir path did not end with the worktree name.
+#
+# IMPORTANT — bg:#45475a keeps this segment in the same visual pill as
+# git_branch.  Without a matching background the colour chain ruptures
+# and the path→git transition chevron paints onto the terminal background.
+# fg:#FFD580 (amber) makes the worktree name pop against the green branch
+# text that immediately follows it inside the same pill.
 [custom.git_worktree]
-command = '''n=$(basename "$(git rev-parse --git-dir 2>/dev/null)"); [ "$n" = ".git" ] || printf "[%s] " "$n"'''
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
-format = "[$output]($style)"
-style = "fg:#C0CAF5"
+command = '''
+  main=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/{print $2; exit}')
+  curr=$(git rev-parse --show-toplevel 2>/dev/null)
+  [ -z "$main" ] || [ "$main" = "$curr" ] && exit 0
+  printf "%s" "$(basename "$curr")"
+'''
+when = '''
+  main=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/{print $2; exit}')
+  curr=$(git rev-parse --show-toplevel 2>/dev/null)
+  [ -n "$main" ] && [ -n "$curr" ] && [ "$main" != "$curr" ]
+'''
+format = "[ 󰘬 $output ]($style)"
+style = "bold fg:#FFD580 bg:#45475a"
 
 [git_status]
 style = "bg:#313244"
@@ -247,20 +312,8 @@ untracked = "[ ?$count](fg:#a6e3a1 bg:#313244)"
 staged = "[ +$count](fg:#a6e3a1 bg:#313244)"
 renamed = "[ »$count](fg:#f9e2af bg:#313244)"
 
-[custom.git_context]
-command = """
-  MAIN=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/ {print $2; exit}')
-  CURR=$(git rev-parse --show-toplevel 2>/dev/null)
-  [ -n "$MAIN" ] && [ "$MAIN" != "$CURR" ] && basename "$MAIN"
-"""
-format = "[$symbol$output]($style) "
-style = "blue dimmed"
-symbol = " "
-when = """
-  MAIN=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/ {print $2; exit}')
-  CURR=$(git rev-parse --show-toplevel 2>/dev/null)
-  [ -n "$MAIN" ] && [ "$MAIN" != "$CURR" ]
-"""
+# custom.git_context removed — its logic is fully covered by
+# custom.git_worktree, which is the single authoritative worktree indicator.
 
 [git_metrics]
 disabled = false
