@@ -7,42 +7,25 @@
 #   #45475a  mid  blue-gray  →  git branch pill bg · worktree pill bg
 #   Terminal bg             →  implicit; gaps between pills
 #
-# POWERLINE CHEVRON CHAIN  (left → right, always one line)
+# SELF-CONTAINED PILLS  (left → right, always one line)
 # ═══════════════════════════════════════════════════════════════════════════
-# Each "" (U+E0B0) chevron uses:
-#   fg = colour of the segment being LEFT
-#   bg = colour of the segment being ENTERED
-# This creates a seamless solid-arrow transition.
+# Each visible block is visually complete on its own:
+#   transparent start chevron  +  coloured body  +  coloured end chevron
+#   [](fg:<bg>)               [ ... ](bg:<bg>)   [](fg:<bg>)
 #
-#  [󰉋 path  bg:#313244]
-#    └─ custom.path_to_git   ▶  fg:#313244 bg:#45475a   (git repos only)
-#  [󰙅 worktree  bg:#45475a]                             (linked worktrees only;
-#  [ branch    bg:#45475a]                              shares pill with branch)
-#    ├─ CLEAN (no file changes, not ahead/behind):
-#    │    └─ custom.tail_branch   ▶  fg:#45475a         (prompt end)
-#    └─ DIRTY or AHEAD/BEHIND:
-#         └─ custom.git_to_status ▶  fg:#45475a bg:#313244
-#  [ status   bg:#313244]  (󰈚 only when file changes; / for ahead/behind)
-#  [+N -N metrics  bg:#313244]
-#         └─ custom.tail_standard ▶  fg:#313244         (prompt end)
+# That means prompt state only decides WHETHER a pill exists, not how the
+# neighbouring pills must close.  No transition/tail connector modules are
+# needed anymore.
 #
-#  Outside git entirely:
-#  [󰉋 path  bg:#313244]
-#         └─ custom.tail_standard ▶  fg:#313244         (prompt end)
+#  [ 󰉋 path                  ]  bg:#313244
+#  [ 󰙅 worktree   branch 2 ]  bg:#45475a
+#  [ 󰈚 +1 ~2 ?1             ]  bg:#313244
+#  [ +80 -15                 ]  bg:#313244
 #
-# WHY SEPARATE CONNECTOR MODULES?
-#   Starship has no conditional at the format level — you cannot pick a
-#   different arrow colour based on what the previous module rendered.
-#   Each connector module encodes ONE specific colour transition and uses
-#   a `when` shell guard to appear only in the appropriate state.
-#   The `command` always echoes the U+E0B0 glyph; `style` supplies fg/bg.
-#
-# WHY `git status -sb | head -1 | grep -qE 'ahead|behind'`?
-#   `git status --porcelain` only reports file changes, not remote divergence.
-#   The branch header line (e.g. `## main...origin/main [ahead 2]`) is the
-#   only reliable single-command way to detect ahead/behind without an extra
-#   `git rev-list` call.  All three connector modules share this compound
-#   condition so their firing logic stays exactly in sync with git_status.
+# WHY `git status -sb | head -1`?
+#   Ahead/behind belongs to the branch pill, not file status.  The header
+#   line of `git status -sb` is the cheapest reliable place to extract the
+#   divergence counts without adding separate `git rev-list` plumbing.
 # ═══════════════════════════════════════════════════════════════════════════
 
 add_newline = true
@@ -51,14 +34,9 @@ command_timeout = 5000
 
 format = """
 ${custom.path}\
-${custom.path_to_git}\
-${custom.git_worktree}\
-$git_branch\
-${custom.git_to_status}\
+${custom.git_meta}\
 $git_status\
 $git_metrics\
-${custom.tail_standard}\
-${custom.tail_branch}\
 $line_break\
 $character"""
 
@@ -232,109 +210,64 @@ done
 [[ ! -w . ]] && ro=" 󰌾"
 printf "%s" "${pre}${out%/}${ro}"
 '''
-format = "[󰉋 $output ]($style)"
-# Chevron that transitions path pill (#313244) → git pill (#45475a).
-# Only appears inside a git repo.  The command echoes the U+E0B0 powerline
-# right-arrow glyph; the style paints it with the correct transition colours.
-[custom.path_to_git]
-command = "echo ''"
+format = "[](fg:#313244)[ 󰉋 $output ]($style)[](fg:#313244)"
+
+# Branch/worktree pill.  Ahead/behind lives here because it describes branch
+# divergence, not file changes in the working tree.
+[custom.git_meta]
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
-style = "fg:#313244 bg:#45475a"
-format = "[$output]($style)"
-# Chevron that transitions git pill (#45475a) → status pill (#313244).
-# Only appears when the repo is dirty (has staged/unstaged/untracked changes
-# or uncommitted line diffs) so it doesn't render for clean repos.
-[custom.git_to_status]
-command = "echo ''"
-# Fires when there is ANYTHING to show in git_status: file changes OR ahead/behind.
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && { git status --porcelain | grep -q . || git status -sb 2>/dev/null | head -1 | grep -qE '(ahead|behind)'; }"
-style = "fg:#45475a bg:#313244"
-format = "([$output]($style))"
-
-# Closing chevron after the status/metrics pill (#313244 → terminal bg).
-# Fires whenever the last visible pill is the dark status block — i.e.,
-# outside git entirely, OR inside git with file changes OR ahead/behind divergence.
-[custom.tail_standard]
-command = "echo ''"
-when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || git status --porcelain | grep -q . || git status -sb 2>/dev/null | head -1 | grep -qE '(ahead|behind)'"
-style = "fg:#313244"
-format = "[$output]($style)"
-
-# Closing chevron after the branch pill (#45475a → terminal bg).
-# Fires only when inside a git repo that is BOTH clean on disk AND not
-# ahead/behind remote — i.e. the branch pill is truly the last visible pill.
-[custom.tail_branch]
-command = "echo ''"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ! git status --porcelain | grep -q . && ! git status -sb 2>/dev/null | head -1 | grep -qE '(ahead|behind)'"
-style = "fg:#45475a"
-format = "[$output]($style)"
-
-[git_branch]
-symbol = " "
-truncation_length = 24
-truncation_symbol = "..."
-style = "fg:#a6e3a1 bg:#45475a"
-format = "[ $symbol$branch ]($style)"
-
-# ─── Linked-worktree indicator ───────────────────────────────────────────
-# Shown ONLY when inside a linked worktree — never in the main checkout.
-#
-# Detection: compares the main worktree path (first entry of `git worktree
-# list --porcelain`) with the current toplevel.  This is more reliable than
-# the old `basename $(git rev-parse --git-dir)` heuristic, which broke on
-# repos where the git-dir path did not end with the worktree name.
-#
-# IMPORTANT — bg:#45475a keeps this segment in the same visual pill as
-# git_branch.  Without a matching background the colour chain ruptures
-# and the path→git transition chevron paints onto the terminal background.
-# fg:#FFD580 (amber) makes the worktree name pop against the green branch
-# text that immediately follows it inside the same pill.
-[custom.git_worktree]
+style = "bold fg:#a6e3a1 bg:#45475a"
 command = '''
-  main=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/{print $2; exit}')
-  curr=$(git rev-parse --show-toplevel 2>/dev/null)
-  [ -z "$main" ] || [ "$main" = "$curr" ] && exit 0
-  printf "%s" "$(basename "$curr")"
+top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
+if [[ -z $branch ]]; then
+  branch=$(git rev-parse --short HEAD 2>/dev/null) || exit 0
+fi
+if (( ${#branch} > 24 )); then
+  branch="${branch:0:21}..."
+fi
+
+out=""
+main=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/{print $2; exit}')
+if [[ -n $main && $main != $top ]]; then
+  out+="󰙅 ${top:t}  "
+fi
+
+out+=" ${branch}"
+
+header=$(git status -sb 2>/dev/null | head -1)
+ahead=$(printf "%s\n" "$header" | grep -oE 'ahead [0-9]+' | awk '{print $2}')
+behind=$(printf "%s\n" "$header" | grep -oE 'behind [0-9]+' | awk '{print $2}')
+
+[[ -n $ahead ]] && out+="  ${ahead}"
+[[ -n $behind ]] && out+="  ${behind}"
+
+printf "%s" "$out"
 '''
-when = '''
-  main=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree/{print $2; exit}')
-  curr=$(git rev-parse --show-toplevel 2>/dev/null)
-  [ -n "$main" ] && [ -n "$curr" ] && [ "$main" != "$curr" ]
-'''
-format = "[ 󰙅 $output ]($style)"
-style = "fg:#e0ff02 bg:#45475a"
+format = " [](fg:#45475a)[ $output ]($style)[](fg:#45475a)"
 
 [git_status]
 style = "bg:#313244"
-# $all_status = file-change tokens only (no ahead/behind).
-# $ahead_behind = remote divergence only.  Keeping them separate lets us
-# display different glyphs: folder icon (󰈚) prefixes file changes;
-# \uf148 (↑ push) and \uf149 (↓ pull) replace the default ahead/behind arrows.
-# The outer () makes the whole block conditional — nothing renders when clean.
-format = "([$all_status$ahead_behind ]($style))"
-conflicted = "[= $count](fg:#f38ba8 bg:#313244)"
-# \uf148 = nf-oct-arrow_up  (push / ahead of remote)
-ahead = "[$count](fg:#fab387 bg:#313244)"
-# \uf149 = nf-oct-arrow_down  (pull / behind remote)
-behind = "[$count](fg:#fab387 bg:#313244)"
-diverged = "[ $ahead_count $behind_count](fg:#fab387 bg:#313244)"
+# File-status pill only.  Remote divergence moved into custom.git_meta.
+format = "( [](fg:#313244)[ 󰈚$all_status ]($style)[](fg:#313244))"
+conflicted = "[ =$count](fg:#f38ba8 bg:#313244)"
+ahead = ""
+behind = ""
+diverged = ""
 up_to_date = ""
 stashed = ""
-deleted = "[󰈚 ✘$count](fg:#f38ba8 bg:#313244)"
-modified = "[󰈚  $count](fg:#89b4fa bg:#313244)"
-untracked = "[󰈚  ?$count](fg:#a6e3a1 bg:#313244)"
-staged = "[󰈚  +$count](fg:#a6e3a1 bg:#313244)"
-renamed = "[󰈚  »$count](fg:#f9e2af bg:#313244)"
-
-# custom.git_context removed — its logic is fully covered by
-# custom.git_worktree, which is the single authoritative worktree indicator.
+deleted = "[ ✘$count](fg:#f38ba8 bg:#313244)"
+modified = "[ ~$count](fg:#89b4fa bg:#313244)"
+untracked = "[ ?$count](fg:#a6e3a1 bg:#313244)"
+staged = "[ +$count](fg:#a6e3a1 bg:#313244)"
+renamed = "[ »$count](fg:#f9e2af bg:#313244)"
 
 [git_metrics]
 disabled = false
 added_style = "fg:#a6e3a1 bg:#313244"
 deleted_style = "fg:#f38ba8 bg:#313244"
 only_nonzero_diffs = true
-format = "([+$added]($added_style)[-$deleted ]($deleted_style))"
+format = "( [](fg:#313244)[ +$added]($added_style)[ -$deleted ]($deleted_style)[](fg:#313244))"
 
 [custom.git_user]
 command = "git config user.name"
