@@ -314,9 +314,9 @@ style = "bg:#313244"
 format = "([$all_status$ahead_behind ]($style))"
 conflicted = "[= $count](fg:#f38ba8 bg:#313244)"
 # \uf148 = nf-oct-arrow_up  (push / ahead of remote)
-ahead = "[ $count](fg:#fab387 bg:#313244)"
+ahead = "[$count](fg:#fab387 bg:#313244)"
 # \uf149 = nf-oct-arrow_down  (pull / behind remote)
-behind = "[ $count](fg:#fab387 bg:#313244)"
+behind = "[$count](fg:#fab387 bg:#313244)"
 diverged = "[ $ahead_count $behind_count](fg:#fab387 bg:#313244)"
 up_to_date = ""
 stashed = ""
