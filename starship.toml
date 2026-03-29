@@ -7,23 +7,30 @@
 #   #45475a  mid  blue-gray  →  git branch pill bg · worktree pill bg
 #   Terminal bg             →  implicit; gaps between pills
 #
-# SELF-CONTAINED PILLS  (left → right, always one line)
+# OVERLAPPING CHEVRON CHAIN  (left → right, always one line)
 # ═══════════════════════════════════════════════════════════════════════════
-# Each visible block is visually complete on its own:
-#   transparent start chevron  +  coloured body  +  coloured end chevron
-#   [](fg:<bg>)               [ ... ](bg:<bg>)   [](fg:<bg>)
+# Robustness comes from modelling the prompt as ordered color zones, not as
+# independent pills.  A zone may contain one or more modules that share the
+# same background, and only the ZONE boundaries get chevrons.
 #
-# That means prompt state only decides WHETHER a pill exists, not how the
-# neighbouring pills must close.  No transition/tail connector modules are
-# needed anymore.
+# Current zones:
+#   1. path        bg:#313244   always visible
+#   2. git meta    bg:#45475a   visible inside a git worktree
+#   3. git changes bg:#313244   visible when file-status OR line metrics exist
 #
-#  [ 󰉋 path                  ]  bg:#313244
-#  [ 󰙅 worktree   branch 2 ]  bg:#45475a
-#  [ 󰈚 +1 ~2 ?1             ]  bg:#313244
-#  [ +80 -15                 ]  bg:#313244
+# This avoids the earlier connector explosion: the prompt only needs to know
+# whether the git-meta zone exists and whether the git-changes zone exists.
+# Order is fixed, visibility is dynamic, and every state reduces to one of:
+#
+#   no git:         [path] → tail_dark
+#   clean git:      [path] → [git meta] → tail_git
+#   dirty git:      [path] → [git meta] → [git changes] → tail_dark
+#
+# Ahead/behind belongs to git meta, so remote divergence never affects the
+# dark git-changes zone visibility.
 #
 # WHY `git status -sb | head -1`?
-#   Ahead/behind belongs to the branch pill, not file status.  The header
+#   Ahead/behind belongs to the branch section, not file status.  The header
 #   line of `git status -sb` is the cheapest reliable place to extract the
 #   divergence counts without adding separate `git rev-list` plumbing.
 # ═══════════════════════════════════════════════════════════════════════════
@@ -34,9 +41,13 @@ command_timeout = 5000
 
 format = """
 ${custom.path}\
+${custom.path_to_git}\
 ${custom.git_meta}\
+${custom.git_to_changes}\
 $git_status\
 $git_metrics\
+${custom.tail_dark}\
+${custom.tail_git}\
 $line_break\
 $character"""
 
@@ -210,7 +221,13 @@ done
 [[ ! -w . ]] && ro=" 󰌾"
 printf "%s" "${pre}${out%/}${ro}"
 '''
-format = "[](fg:#313244)[ 󰉋 $output ]($style)[](fg:#313244)"
+format = "[ 󰉋 $output ]($style)"
+
+[custom.path_to_git]
+command = "echo ''"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+style = "fg:#313244 bg:#45475a"
+format = "[$output]($style)"
 
 # Branch/worktree pill.  Ahead/behind lives here because it describes branch
 # divergence, not file changes in the working tree.
@@ -244,12 +261,18 @@ behind=$(printf "%s\n" "$header" | grep -oE 'behind [0-9]+' | awk '{print $2}')
 
 printf "%s" "$out"
 '''
-format = "[](fg:#45475a)[ $output ]($style)[](fg:#45475a)"
+format = "[ $output ]($style)"
+
+[custom.git_to_changes]
+command = "echo ''"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && { git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q .; }"
+style = "fg:#45475a bg:#313244"
+format = "[$output]($style)"
 
 [git_status]
 style = "bg:#313244"
 # File-status pill only.  Remote divergence moved into custom.git_meta.
-format = "( [](fg:#313244)[ 󰈚 $all_status ]($style)[](fg:#313244))"
+format = "([ 󰈚$all_status ]($style))"
 conflicted = "[ =$count](fg:#f38ba8 bg:#313244)"
 ahead = ""
 behind = ""
@@ -267,7 +290,21 @@ disabled = false
 added_style = "fg:#a6e3a1 bg:#313244"
 deleted_style = "fg:#f38ba8 bg:#313244"
 only_nonzero_diffs = true
-format = "( [](fg:#313244)[ +$added]($added_style)[ -$deleted ]($deleted_style)[](fg:#313244))"
+# Each group is wrapped independently so `+N` or `-N` can disappear cleanly
+# without leaving a stray sign behind when only one side is nonzero.
+format = "([ +$added]($added_style))([ -$deleted ]($deleted_style))"
+
+[custom.tail_dark]
+command = "echo ''"
+when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1 || git status --porcelain | grep -q . || git diff --shortstat 2>/dev/null | grep -q ."
+style = "fg:#313244"
+format = "[$output]($style)"
+
+[custom.tail_git]
+command = "echo ''"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && ! git status --porcelain | grep -q . && ! git diff --shortstat 2>/dev/null | grep -q ."
+style = "fg:#45475a"
+format = "[$output]($style)"
 
 [custom.git_user]
 command = "git config user.name"
