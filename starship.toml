@@ -233,7 +233,7 @@ format = "[$output]($style)"
 # divergence, not file changes in the working tree.
 [custom.git_meta]
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
-style = "bold fg:#a6e3a1 bg:#45475a"
+style = "fg:#a6e3a1 bg:#45475a"
 command = '''
 top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
