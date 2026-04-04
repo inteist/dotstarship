@@ -194,7 +194,7 @@ version_format = "${raw}"
 
 [custom.path]
 when = "true"
-style = "bold fg:#89dceb bg:#313244"
+style = "fg:#89dceb bg:#313244"
 command = '''
 p=${PWD/#$HOME/\~}
 if [[ $p == "/" ]]; then
@@ -240,8 +240,8 @@ branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
 if [[ -z $branch ]]; then
   branch=$(git rev-parse --short HEAD 2>/dev/null) || exit 0
 fi
-if (( ${#branch} > 24 )); then
-  branch="${branch:0:21}..."
+if (( ${#branch} > 40 )); then
+  branch="${branch:0:37}..."
 fi
 
 out=""
